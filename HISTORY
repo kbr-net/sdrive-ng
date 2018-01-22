@@ -1,0 +1,38 @@
+v1.5:
+- fixed read config from sdrive control
+- fixed bug in file create, if next dir sector needed
+
+v1.4:
+- some fixes on file creation
+  + It was not always created in the last choosen directory.
+  + Revert funktion worked not correctly.
+  + Read-/write-Access on new image now gets Error 139 until formatted.
+- some code optimizations
+
+v1.3:
+- fixed file end detection
+- added support for create new files
+  Choose the drive you want to create a new file with LEFT-/RIGHT
+  buttons, then press and hold the BOOT button for about 2 seconds,
+  until the drive led begins to flash. Now format the new drive image.
+  Images with upcounting names like SDNG0001.ATR will be created in
+  the last choosen directory from sdrive control program.
+  Only single- and enhanced density images are supported yet!
+
+v1.2:
+- debugloader memory dump fixed for ATmega328
+
+v1.1:
+- added build for ATmega328 MCU as direct replacement for the ATmega8
+- added bootloader support
+- SDHC detection enhanced
+- debugloader for error reporting on the Atari
+
+v02(ng1.0):
+- SDcard detection and control generally enhanced
+- error detection(blinkcodes) for SDcard problems
+- SDHC support
+- FAT32 support
+- many code optimization
+- sdrive control program converted to XA
+

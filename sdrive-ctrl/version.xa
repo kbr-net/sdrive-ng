@@ -1,0 +1,5 @@
+;  version SDrive control program
+;	
+	;.byte "v04 20151206"
+	.byte "v",16,20,0,18,16,17,21,17,18,16,22
+;

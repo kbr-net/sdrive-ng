@@ -1,0 +1,50 @@
+                              Bootloader Change Log
+
+2014-05-30 By kbr
+
+Version for sdrive-ng
+  - added fat32 support
+  - added update of EEPROM
+  - combined binary update-file
+
+2008-02-23 By R.Riedel aka 'Shadowolf'
+
+Version for sd2iec 1.x hardware:
+ - Mega644
+ - ID = 0x31434549; -> "IEC1"
+ - checks CRC before flashing so bad or broken files are not accepted
+
+Because of the additional CRC-check it won't fit into the bootloader-section
+of a Mega32 anymore -> the size is 2164 bytes!
+
+
+2008-01-05 By R.Riedel aka 'Shadowolf'
+
+Updated some parts of the source-tree with new files from mikrocontroller.net.
+FAT12 is now supported as well so even small cards should work.
+
+2007-09-30 By R.Riedel aka 'Shadowolf'
+
+Utilises the second LED (the red one) on the MMC2IEC as well.
+While the green LED is blinking while a firmware update is in progress
+the red LED stays lit as long as the bootloader is active.
+
+2007-08-27: By Ingo Korb aka 'Unseen'
+
+Modified to accept a "0.0" binary as test-version and flash it regardless
+of what version and revision the currently flashed binary has.
+
+Installed in about 26 units of the second batch shipped.
+
+2007-08-05: By R.Riedel aka 'Shadowolf'
+
+The version that was released with V0.9 of MMC2IEC
+and installed in about the first 11 units I shipped. 
+
+2007-07-09: By R.Riedel aka 'Shadowolf'
+
+Initial effort, based on "HolgerBootloader10.zip" to be found on
+www.mikrocontroller.net this is merely configured to work as
+bootloader for MMC2IEC.
+
+This first release was mostly experimental.

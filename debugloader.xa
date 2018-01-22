@@ -1,0 +1,259 @@
+	* = $700
+begin
+	.byte $00
+	.byte (end-begin-1)/$80+1	; nr. of blocks to load
+	.word *-2			; load addr
+	.word start			; start addr
+	
+#define	iocb $00
+#define addr $cb
+#define	messagelen $80
+#define	errordata $3000
+#define	siolen $800
+
+init:					; init follows here
+	jsr	printbanner
+	clc
+	rts
+
+start:
+	jsr	printmsg
+	lda	#$9b
+	jsr	putchar
+	jsr	putchar
+loop
+	jsr	printkeymsg
+	jsr	readkey
+	lda	#0		; reset linecounter
+	sta	bytecount+1
+	;lda	#$00		; set sram addr to 0
+	;sta	$30a
+	;sta	$30b
+	jsr	loaderrordata
+	bmi	sioerror
+	jsr 	hexdump
+	;jsr	readkey
+	;lda	#$00
+	;sta	$30a
+	;lda	#$04		; set sram addr to 1024
+	;sta	$30b
+	;jsr	loaderrordata
+	;bmi	sioerror
+	;jsr 	hexdump
+	jmp	loop
+
+loaderrordata:
+	lda	#$71		; device sdrive
+	sta	$300
+	lda	#1		; unit
+	sta	$301
+	lda	#$fa		; cmd read sram
+	sta	$302
+	lda	#$40		; readflag
+	sta	$303
+	lda	#<errordata	; buf-lo
+	sta	$304
+	lda	#>errordata	; buf-hi
+	sta	$305
+	lda	#$7		; timeout
+	sta	$306
+	lda	#<siolen	; length
+	sta	$308
+	lda	#>siolen	; 1024
+	sta	$309
+	jsr	$E459		; call siov
+	rts
+
+printkeymsg:
+	ldx	#iocb
+	lda	#<keymsg	; set addr
+	sta	$344,X
+	lda	#>keymsg	; high byte
+	sta	$345,X
+	lda	#<keymsglen	; set length
+	sta	$0348,X
+	lda	#>keymsglen
+	sta	$0349,X
+	jmp	putstr
+
+sioerror:
+	tya
+	pha			; save error code
+	ldx	#iocb
+	lda	#<serror	; set addr
+	sta	$344,X
+	lda	#>serror	; high byte
+	sta	$345,X
+	lda	#<serrorlen	; set length
+	sta	$0348,X
+	lda	#>serrorlen
+	sta	$0349,X
+	jsr	putstr
+	pla
+	jsr	puthex
+	lda	#$9b
+	jsr	putchar
+	jmp	loop
+
+printbanner:
+	ldx	#iocb
+	lda	#<banner	; set addr
+	sta	$344,X
+	lda	#>banner	; high byte
+	sta	$345,X
+	lda	#<bannerlen	; set length
+	sta	$0348,X
+	lda	#>bannerlen
+	sta	$0349,X
+
+putstr:
+	lda	#$0B		; set command put char
+	sta	$0342,X
+	jsr	$E456
+	rts
+
+printmsg:
+/*
+	ldx	#iocb
+	lda	#<message	; set addr
+	sta	$344,X
+	lda	#>message	; high byte
+	sta	$345,X
+	lda	#<messagelen	; set length
+	sta	$0348,X
+	lda	#>messagelen
+	sta	$0349,X
+	jmp	putstr
+*/
+	ldy	#0
+pbloop	lda	message,y
+	beq	last
+	tax
+	tya
+	pha
+	txa
+	jsr	putchar
+	pla
+	tay
+	iny
+	jmp	pbloop
+
+hexdump:
+	lda	#$7d		; clear screen
+	jsr	putchar
+	lda	#<errordata
+	sta	addr
+	lda	#>errordata
+	sta	addr+1
+
+	jsr	lineaddr
+
+	ldy	#$0
+agn1:	lda	(addr),Y
+	sty	hexcount
+	jsr	puthex
+	lda	#$20		; add space
+	jsr	putchar
+	inc	bytecount
+	ldy	hexcount
+	iny
+	cpy	#$8
+	bne	agn1
+
+	lda	#$9b		; newline
+	jsr	putchar
+
+	lda	bytecount
+	bne	next8
+	inc	bytecount+1
+	lda	bytecount+1
+	cmp	#>siolen	; 2048 bytes
+	beq	last
+
+next8	lda	#8		; next 8 bytes
+	clc
+	adc	addr
+	sta	addr
+	lda	#0
+	adc	addr+1
+	sta	addr+1
+	jsr	lineaddr
+	ldy	#0
+	jmp	agn1
+
+last:	;lda	#$9b
+	;jsr	putchar
+	rts
+
+lineaddr:
+	lda	bytecount+1	; print line addr
+	jsr	puthex
+	lda	bytecount	; only if we have more than 256 bytes
+	jsr	puthex
+	lda	#":"
+	jsr	putchar
+	lda	#$20
+	jsr	putchar
+	rts
+
+puthex:	pha
+	ror
+	ror
+	ror
+	ror
+	jsr	bin2hex
+	jsr	putchar
+	pla
+	jsr	bin2hex
+	jsr	putchar
+	rts
+
+bin2hex:
+	and	#$0F
+	cmp	#$0A
+	bpl	char
+digit:	clc
+	adc	#$30
+	rts
+char:	clc
+	adc	#$37
+	rts
+
+putchar:
+	ldx	#iocb
+	ldy	#$0B		; set command put char
+	sty	$0342+iocb
+	ldy	#0		; set length 0 for 1-byte operation
+	sty	$0348+iocb
+	ldy	#0
+	sty	$0349+iocb
+	jsr	$E456
+	rts
+
+readkey:
+	ldx	#iocb
+	ldy	#$07		; set command read char
+	sty	$0342+iocb
+	ldy	#0		; set length 0 for 1-byte operation
+	sty	$0348+iocb
+	ldy	#0
+	sty	$0349+iocb
+	jsr	$E456
+	rts
+
+;device		.byte 	"E",0
+hexcount	.dsb 	1
+bytecount	.word 	0
+banner		.byte	17:.dsb 23,18:.byte 5,155
+		.byte	"|sdrive-ng error report:|",155
+		.byte	26:.dsb 23,18:.byte 3,155,155
+bannerlen	= *-banner
+serror		.byte	"sio error: "
+serrorlen	= *-serror
+keymsg		.byte	"<return> for AVR memory dump",155
+keymsglen	= *-keymsg
+message
+		;.byte "asdfasd",0
+		;.dsb messagelen	;for testing in emu
+		* = *+messagelen
+end
